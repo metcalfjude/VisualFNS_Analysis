@@ -149,12 +149,31 @@ function analyse_saccades(input_dir::String, output_dir::String; plot_poincare::
             time_axis = 0.1 .* (1:length(x))
             
             # LOCK: Only one thread can interact with Plots.jl at a time
+            # Convert steps to seconds to match frequency analysis scales
+            time_axis_sec = (1:length(x)) .* dt
+
             lock(plot_lock) do
-                p_trace = plot(time_axis, x, label="X Position", color=:blue, alpha=0.6, legendfontsize=12)
-                plot!(p_trace, time_axis, y, label="Y Position", color=:green, alpha=0.6)
-                plot!(p_trace, sac_starts .* 0.1, x[sac_starts], seriestype=:scatter, 
-                      markersize=10, color=:red, label="Detected Saccades")
-                plot!(p_trace, xlims=(1000, 4000), ylims=(-1200, 1200), title="Saccade Detection Trace")
+                # Match the darkblue/darkorange aesthetic from freq_analyse.jl
+                p_trace = plot(time_axis_sec, x, label="X Position", color=:darkblue, alpha=0.8, linewidth=1.5)
+                plot!(p_trace, time_axis_sec, y, label="Y Position", color=:darkorange, alpha=0.8, linewidth=1.5)
+                
+                # Add dashed vertical lines for saccades
+                if !isempty(sac_starts)
+                    # Plot the first line with a label for the legend
+                    vline!(p_trace, [sac_starts[1] * dt], color=:black, linestyle=:dash, linewidth=1.5, alpha=0.6, label="Saccade Onset")
+                    # Plot the rest without adding duplicate legend entries
+                    if length(sac_starts) > 1
+                        vline!(p_trace, sac_starts[2:end] .* dt, color=:black, linestyle=:dash, linewidth=1.5, alpha=0.6, label=false)
+                    end
+                end
+                
+                # Define sensible window limits in seconds rather than raw indices
+                plot!(p_trace, 
+                    xlims=(0.1, 0.4), # Example: View from 0.1s to 0.4s
+                    xlabel="Time (s)", 
+                    ylabel="Position (arb. units)",
+                    title="Saccade Detection Trace"
+                )
                 
                 outname = joinpath(output_dir, splitext(basename(file))[1] * "-SACCADES.pdf")
                 savefig(p_trace, outname)

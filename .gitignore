@@ -1,12 +1,4 @@
 .DS_Store
 Manifest.toml
 
-/data
-/ISI_*
-/Welch
-/SMSD
-/MAD*
-/MSD*
-/FFTS
-/ACFs
-/StepDistributions
+data/
