@@ -63,6 +63,7 @@ function calculate_isi(x::AbstractVector, y::AbstractVector, msd::Float64;
     threshold_off = (ratio * λ) * msd
 
     starts_timed = Int[]
+    stops_timed = Int[]
     last_start = -timeout_steps 
     
     i = 1
@@ -76,9 +77,10 @@ function calculate_isi(x::AbstractVector, y::AbstractVector, msd::Float64;
             end
             
             event_duration = j - i
-            
+
             if event_duration >= min_dur_steps && (i - last_start) > timeout_steps
                 push!(starts_timed, i)
+                push!(stops_timed, min(j, n))
                 last_start = i
             end
             i = j
@@ -88,7 +90,7 @@ function calculate_isi(x::AbstractVector, y::AbstractVector, msd::Float64;
     end
 
     isi = diff(starts_timed) .* (dt * 1000) # Convert to ms
-    return starts_timed, isi
+    return starts_timed, stops_timed, isi
 end
 
 # ==========================================
@@ -133,17 +135,30 @@ function analyse_saccades(input_dir::String, output_dir::String; plot_poincare::
         df = datasets[i]
         x, y = df.value1, df.value2
 
-        sac_starts, isi = calculate_isi(x, y, μ_global; 
-            timeout_smoother=0.2, 
-            timeout=0.05,
-            ratio=0.1,
-            λ=1.2,
-            dt=dt, 
-            min_dur_steps=1000
+        # Unpack the new stops_timed variable
+        sac_starts, sac_stops, isi = calculate_isi(x, y, μ_global; 
+            timeout_smoother=0.2, timeout=0.05, ratio=0.1, λ=1.2, dt=dt, min_dur_steps=1000
         )
 
-        # Safely store data in this thread's designated index
         isi_collections[i] = isi
+
+        # --- NEW EXPORT SECTION ---
+        # Create a boolean mask for saccades
+        is_saccade = falses(length(x))
+        for (start_idx, stop_idx) in zip(sac_starts, sac_stops)
+            is_saccade[start_idx:stop_idx] .= true
+        end
+        
+        # Append to a copy of the dataframe and save
+        df_out = copy(df)
+        df_out[!, :is_saccade] = is_saccade
+        
+        annotated_dir = joinpath(output_dir, "Annotated_Data")
+        isdir(annotated_dir) || mkpath(annotated_dir)
+        
+        out_csv = joinpath(annotated_dir, "annotated_" * basename(file))
+        CSV.write(out_csv, df_out)
+        # --------------------------
 
         if length(isi) > 5
             time_axis = 0.1 .* (1:length(x))
