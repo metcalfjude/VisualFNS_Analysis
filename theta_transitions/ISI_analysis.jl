@@ -10,23 +10,6 @@ using Plots
 using Distributions
 
 # ==========================================
-# Configuration & Plotting Defaults
-# ==========================================
-
-default(
-    fontfamily = "Computer Modern",
-    titlefontsize = 24,
-    guidefontsize = 18,          
-    tickfontsize = 20,
-    legendfontsize = 16,
-    grid = false,
-    framestyle = :box,
-    dpi = 300,
-    margin = 8Plots.mm,
-    legend = :topright,
-)
-
-# ==========================================
 # Core Functions
 # ==========================================
 

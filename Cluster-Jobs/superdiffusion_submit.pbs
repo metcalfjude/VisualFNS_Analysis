@@ -1,0 +1,19 @@
+#!/bin/bash
+#PBS -N AT_sweep
+#PBS -l select=1:ncpus=8:mem=32GB
+#PBS -l walltime=96:00:00
+#PBS -V
+#PBS -o /import/taiji1/jmet9477/Thesis_Modelling/Cluster-Jobs/superdiffusion_submit.o
+#PBS -j oe
+#PBS -M jmet9477@uni.sydney.edu.au
+#PBS -m abe
+
+cd '/import/taiji1/jmet9477/Thesis_Metrics'
+echo $PBS_O_WORKDIR
+
+source /suphys/jmet9477/.bashrc
+
+export JULIA_NUM_THREADS="$(PBS_NCPUS)"
+
+# Rely on the environment variable, remove the '-t auto' flag
+julia '/import/taiji1/jmet9477/Thesis_Modelling/superdiffusion/fractional_moments.jl'
