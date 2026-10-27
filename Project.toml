@@ -1,4 +1,4 @@
-name = "FNS_Model_Analysis"
+name = "VisualFNS_Analysis"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"

@@ -1,5 +1,5 @@
 using DrWatson
-@quickactivate :FNS_Model_Analysis
+@quickactivate :VisualFNS_Analysis
 
 using DataFrames
 using CSV
@@ -31,8 +31,8 @@ fit_end_ms   = first(lambda_df.fit_end_ms)
 # =====================================================================
 # 2. COLORMAP SELECTION
 # =====================================================================
-# Map 30 distinct steps uniformly across the :inferno colormap
-my_colors = [cgrad(:inferno)[x] for x in range(0, 1, length=num_qs)]
+# Map 30 distinct steps uniformly across the :plasma colormap
+my_colors = [cgrad(:plasma)[x] for x in range(0.5, 0.8, length=num_qs)]
 
 # =====================================================================
 # 3. FIGURE 1: RESCALED MOMENT SPECTRUM (with q=2 Best Fit Line)
@@ -40,19 +40,20 @@ my_colors = [cgrad(:inferno)[x] for x in range(0, 1, length=num_qs)]
 println("Generating rescaled moment spectrum plot...")
 
 moment_plot = plot(
+    size=(500, 500),
     xlabel="Time Lag Δt (ms)", 
-    ylabel="Rescaled Moment",
+    ylabel="Moment M(Δt)",
     title="Fractional Absolute Displacements",
     xscale=:log10,
     yscale=:log10,
     grid=true,
-    legend=:outertopright,
+    legend=:bottomright,
     dpi=300
 )
 
 for i in 1:num_qs
     q = qs[i]
-    is_labeled = (i % 5 == 1) || (i == num_qs)  # Label every 5th curve and the last one
+    is_labeled = (i % 5 == 0) || (i == 1) || (i == num_qs)  # Label every 5th curve and the last one
     q_str = replace(string(round(q, digits=1)), "." => "_")
     
     col_mean = Symbol("q_", q_str, "_rescaled_mean")
@@ -70,11 +71,11 @@ for i in 1:num_qs
         plot!(moment_plot, lag_axis_ms, normalized_moment, 
               label="q = $(round(q, digits=1))", 
               ribbon=ribbon_tuple, fillalpha=0.20,
-              linewidth=2.0, alpha=1.0, color=line_color)
+              linewidth=2.5, alpha=1.0, color=line_color)
     else
         plot!(moment_plot, lag_axis_ms, normalized_moment, 
               label="", 
-              linewidth=1.0, alpha=0.3, color=line_color)
+              linewidth=1.5, alpha=0.3, color=line_color)
     end
 end
 
@@ -122,9 +123,9 @@ q_lambdas = qs[valid_lambda] .* lambdas[valid_lambda]
 q_lambdas_se = lambda_df.zeta_sem[valid_lambda]
 
 lambda_plot = plot(
-    title="Scaling Exponent vs. Moment Order", 
-    xlabel="Fractional Moment Order (q)", 
-    ylabel="Exponent qλ(q)",
+    title="Monoscaling Exponents", 
+    xlabel="Order (q)", 
+    ylabel="Exponent λ(q)",
     legend=:bottomright,
     dpi=300,
     framestyle=:box,          
@@ -144,14 +145,14 @@ scatter!(
     q_lambdas,
     yerror = q_lambdas_se,
     marker = :circle,
-    markersize = 6,
-    markercolor = RGB(0.12, 0.47, 0.71),      # Tableau Blue
+    markersize = 10,
+    markercolor = :darkorange,      # Tableau Orange
     markerstrokecolor = :white,             
     markerstrokewidth = 1.0,
     markeralpha = 0.9,
     color = RGB(0.4, 0.4, 0.4),      # Neutral gray error bars
     alpha = 0.6,
-    label = "Empirical qλ(q)"
+    label = "λ(q)"
 )
 
 # High-contrast linear fit line with R^2 and analytical slope standard error
@@ -187,13 +188,13 @@ if count(valid_lambda) >= 2
         x_data,
         y_pred;
         linewidth = 2.5,
-        color = RGB(0.89, 0.10, 0.11),        # Tableau Red
+        color = :red2,        # Tableau Red
         label = fit_label,
         linestyle = :dash
     )
 end
 
-savefig(moment_plot, plotsdir("rescaled_moment_spectrum.png"))
-savefig(lambda_plot, plotsdir("lambda_vs_q_fit.png"))
+savefig(moment_plot, plotsdir("rescaled_moment_spectrum.pdf"))
+savefig(lambda_plot, plotsdir("lambda_vs_q_fit.pdf"))
 println("Saved styled q*lambda plot with slope SE and R²!")
 
